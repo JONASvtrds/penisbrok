@@ -1,0 +1,137 @@
+-- Função para adicionar uma part na junção entre a barriga e as pernas do jogador
+function addSkinColoredPart()
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local character = LocalPlayer.Character
+
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local humanoidRootPart = character.HumanoidRootPart
+
+        -- Criar a part
+        local part = Instance.new("Part")
+        part.Size = Vector3.new(1, 1, 3)  -- Retangular
+        part.Color = Color3.fromRGB(255, 224, 189)  -- Cor de pele de pessoas brancas
+        part.Anchored = false
+        part.CanCollide = false
+
+        -- Criar a ponta rosa
+        local pinkTip = Instance.new("Part")
+        pinkTip.Size = Vector3.new(1, 1, 1)
+        pinkTip.Color = Color3.fromRGB(255, 105, 180)  -- Rosa
+        pinkTip.Anchored = false
+        pinkTip.CanCollide = false
+
+        -- Criar junções para conectar as parts ao HumanoidRootPart
+        local weldMain = Instance.new("WeldConstraint")
+        weldMain.Part0 = humanoidRootPart
+        weldMain.Part1 = part
+        weldMain.Parent = humanoidRootPart
+
+        local weldTip = Instance.new("WeldConstraint")
+        weldTip.Part0 = part
+        weldTip.Part1 = pinkTip
+        weldTip.Parent = part
+
+        -- Posicionar a part na junção entre a barriga e as pernas do jogador
+        part.CFrame = humanoidRootPart.CFrame * CFrame.new(0, -1.5, -1.5)
+        part.Parent = character
+
+        -- Posicionar a ponta rosa na frente da part principal
+        pinkTip.CFrame = part.CFrame * CFrame.new(0, 0, -1.5)  -- Ponta rosa do outro lado
+        pinkTip.Parent = character
+    end
+end
+
+-- Função para criar uma nova tela GUI
+local function createScreenGui()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "CustomScreenGui"
+    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    return screenGui
+end
+
+-- Função para criar um quadro arrastável
+local function createDraggableFrame(parent, position, size)
+    local frame = Instance.new("Frame")
+    frame.Name = "DraggableFrame"
+    frame.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale, position.Y.Offset)
+    frame.Size = UDim2.new(size.X.Scale, size.X.Offset, size.Y.Scale, size.Y.Offset)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    frame.Parent = parent
+    
+    -- Tornar o quadro arrastável
+    local UIS = game:GetService("UserInputService")
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+    
+    return frame
+end
+
+-- Função para criar um botão
+local function createButton(parent, text, position, size, callback)
+    local button = Instance.new("TextButton")
+    button.Name = "CustomButton"
+    button.Text = text
+    button.Position = UDim2.new(position.X.Scale, position.X.Offset, position.Y.Scale, position.Y.Offset)
+    button.Size = UDim2.new(size.X.Scale, size.X.Offset, size.Y.Scale, size.Y.Offset)
+    button.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Vermelho como padrão
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Parent = parent
+
+    button.MouseButton1Click:Connect(function()
+        callback()
+    end)
+    
+    return button
+end
+
+-- Inicialização da GUI
+local screenGui = createScreenGui()
+local draggableFrame = createDraggableFrame(screenGui, UDim2.new(0.5, -150, 0.5, -150), UDim2.new(0, 300, 0, 300))
+
+-- Adicionar botão "jubileison" ao UI
+local addSkinColoredPartButton = createButton(draggableFrame, "jubileison", UDim2.new(0.5, -50, 0.7, -25), UDim2.new(0, 100, 0, 50), function()
+    addSkinColoredPart()
+end)
+
+-- Função para fechar a UI ao pressionar Control esquerdo
+local UIS = game:GetService("UserInputService")
+
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.LeftControl then
+        draggableFrame.Visible = not draggableFrame.Visible
+    end
+end)
